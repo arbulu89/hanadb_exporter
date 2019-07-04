@@ -23,25 +23,21 @@ except ImportError: # pragma: no cover
     # Load custom prometheus client
     raise NotImplementedError('custom prometheus client not implemented')
 
-from hanadb_exporter.exporters import prometheus_metrics
-
-
-class MalformedMetric(Exception):
-    """
-    Metric malformed method
-    """
 
 
 class SapHanaCollector(object):
     """
     SAP HANA database data exporter
+
+    Args:
+        connector (hdb_connector): SAP HANA database connector
+        metrics_config (ExporterMetrics): Metrics data loaded from metrics file
     """
 
-    def __init__(self, connector, metrics_file):
+    def __init__(self, connector, metrics_config):
         self._logger = logging.getLogger(__name__)
         self._hdb_connector = connector
-        # load metric configuration
-        self._metrics_config = prometheus_metrics.PrometheusMetrics(metrics_file)
+        self._metrics_config = metrics_config
         # TODO: Get hana version
 
     def _format_query_result(self, query_result):

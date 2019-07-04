@@ -11,6 +11,8 @@ SAP HANA database exporter factory
 import logging
 
 from hanadb_exporter.exporters import prometheus_exporter
+from hanadb_exporter.exporters import azure_exporter
+from hanadb_exporter.exporters import exporter_metrics
 
 
 class SapHanaExporter(object):
@@ -27,13 +29,16 @@ class SapHanaExporter(object):
         Create SAP HANA exporter
         """
         cls._logger = logging.getLogger(__name__)
+        metrics_config = exporter_metrics.ExporterMetrics(kwargs.get('metrics_file'))
         if exporter_type == 'prometheus':
             cls._logger.info('prometheus exporter selected')
             collector = prometheus_exporter.SapHanaCollector(
                 connector=kwargs.get('hdb_connector'),
-                metrics_file=kwargs.get('metrics_file')
+                metrics_config=metrics_config
             )
             return collector
+        elif exporter_type == 'azure':
+            cls._logger.info('azure exporter selected')
         else:
             raise NotImplementedError(
                 '{} exporter not implemented'.format(exporter_type))

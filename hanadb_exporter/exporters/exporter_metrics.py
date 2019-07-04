@@ -1,5 +1,5 @@
 """
-SAP HANA database prometheus data exporter metrics
+SAP HANA database data exporter metrics
 
 :author: xarbulu
 :organization: SUSE Linux GmbH
@@ -21,14 +21,17 @@ METRICMODEL = collections.namedtuple(
 
 class Metric(METRICMODEL):
     """
-    Class to store the loaded prometheus metrics inherited from namedtuple
+    Class to store the loaded metrics inherited from namedtuple
     """
 
     # pylint:disable=R0913
     # pylint:disable=W0622
     def __new__(cls, name, description, labels, value, unit, type, enabled=True):
-        return super(Metric, cls).__new__(
+        logging.getLogger(__name__).debug('Parsing new metric: %s', name)
+        metric = super(Metric, cls).__new__(
             cls, name, description, labels, value, unit, type, enabled)
+        logging.getLogger(__name__).debug('Metric parsed correctly')
+        return metric
 
 
 class Query(object):
@@ -37,6 +40,7 @@ class Query(object):
     """
 
     def __init__(self):
+        self._logger = logging.getLogger(__name__)
         self.query = None
         self.metrics = []
         self.enabled = True
@@ -45,12 +49,15 @@ class Query(object):
         """
         Parse metrics by query
         """
+        self._logger.debug('Parsing new query: %s ...', query[:50])
         self.query = query
         self.metrics = []
         self.enabled = query_data.get('enabled', True)
+        self._logger.debug('Query enabled status: %s', self.enabled)
         for metric in query_data['metrics']:
             modeled_data = Metric(**metric)
             self.metrics.append(modeled_data)
+        self._logger.debug('Query parsed correctly')
 
     @classmethod
     def get_model(cls, query, metrics):
@@ -62,7 +69,7 @@ class Query(object):
         return modeled_query
 
 
-class PrometheusMetrics(object):
+class ExporterMetrics(object):
     """
     Class to store the metrics data
     """
@@ -76,6 +83,7 @@ class PrometheusMetrics(object):
         Load metrics file as json
         """
         logger = logging.getLogger(__name__)
+        logger.info('Loading metrics from %s', metrics_file)
         queries = []
         with open(metrics_file, 'r') as file_ptr:
             data = json.load(file_ptr)
@@ -89,4 +97,5 @@ class PrometheusMetrics(object):
             logger.error(err)
             raise
 
+        logger.info('Metrics file %s loaded correctly', metrics_file)
         return queries
